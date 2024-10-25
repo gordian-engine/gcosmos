@@ -56,14 +56,16 @@ sh ./scripts/run_gcosmos.sh
 
 ### Transaction Testing
 ```bash
-./gcosmos tx bank send val cosmos10r39fueph9fq7a6lgswu4zdsg8t3gxlqvvvyvn 1stake --chain-id=TODO:TEMPORARY_CHAIN_ID --generate-only > example-tx.json
+./gcosmos tx bank send val cosmos10r39fueph9fq7a6lgswu4zdsg8t3gxlqvvvyvn 1stake --chain-id=localchain-1 --generate-only > example-tx.json
 
 # TODO: get account number
-./gcosmos tx sign ./example-tx.json --offline --from=val --sequence=1 --account-number=1 --chain-id=TODO:TEMPORARY_CHAIN_ID --keyring-backend=test > example-tx-signed.json
+./gcosmos tx sign ./example-tx.json --offline --from=val --sequence=1 --account-number=0 --chain-id=localchain-1 --keyring-backend=test > example-tx-signed.json
 
 ./grpcurl -plaintext -emit-defaults -d '{"tx":"'$(cat example-tx-signed.json | base64 | tr -d '\n')'"}' localhost:9092 gordian.server.v1.GordianGRPC/SimulateTransaction
 
 ./grpcurl -plaintext -emit-defaults -d '{"tx":"'$(cat example-tx-signed.json | base64 | tr -d '\n')'"}' localhost:9092 gordian.server.v1.GordianGRPC/SubmitTransaction
+
+./grpcurl -plaintext -d '{"address":"cosmos10r39fueph9fq7a6lgswu4zdsg8t3gxlqvvvyvn","denom":"stake"}' localhost:9092 gordian.server.v1.GordianGRPC/QueryAccountBalance
 ```
 
 ## Hacking on a demo with four validators
