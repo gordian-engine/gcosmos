@@ -1,0 +1,101 @@
+From 6d67780a97baabdb7c02ff408079eb417bb43e38 Mon Sep 17 00:00:00 2001
+From: Andrew Gouin <andrew@gouin.io>
+Date: Fri, 25 Oct 2024 16:25:31 -0600
+Subject: [PATCH 2/2] fix: allow customizing query and tx flags
+
+---
+ client/flags/flags.go | 52 ++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 46 insertions(+), 6 deletions(-)
+
+diff --git a/client/flags/flags.go b/client/flags/flags.go
+index d44ed31679..b4992e662f 100644
+--- a/client/flags/flags.go
++++ b/client/flags/flags.go
+@@ -90,6 +90,10 @@ const (
+ 	FlagLogLevel   = "log_level"
+ 	FlagLogFormat  = "log_format"
+ 	FlagLogNoColor = "log_no_color"
++
++	FlagNodeDesc         = "<host>:<port> to CometBFT RPC interface for this chain"
++	FlagGRPCDesc         = "the gRPC endpoint to use for this chain"
++	FlagGRPCInsecureDesc = "allow gRPC over insecure channels, if not the server must use TLS"
+ )
+ 
+ // List of supported output formats
+@@ -98,23 +102,57 @@ const (
+ 	OutputFormatText = "text"
+ )
+ 
++// FlagOpts defines customization options for command flags.
++type FlagOpts struct {
++	// DefaultGRPC specifies whether GRPC should be used by default over RPC.
++	DefaultGRPC bool
++
++	// AdditionalFlags specifies additional flags that should be added to the command.
++	AdditionalFlags []*pflag.Flag
++}
++
++var (
++	// App can override these default flag options
++	QueryFlagOpts *FlagOpts = nil
++	TxFlagOpts    *FlagOpts = nil
++)
++
+ // LineBreak can be included in a command list to provide a blank line
+ // to help with readability
+ var LineBreak = &cobra.Command{Run: func(*cobra.Command, []string) {}}
+ 
+ // AddQueryFlagsToCmd adds common flags to a module query command.
+ func AddQueryFlagsToCmd(cmd *cobra.Command) {
+-	cmd.Flags().String(FlagNode, "tcp://localhost:26657", "<host>:<port> to CometBFT RPC interface for this chain")
+-	cmd.Flags().String(FlagGRPC, "", "the gRPC endpoint to use for this chain")
+-	cmd.Flags().Bool(FlagGRPCInsecure, false, "allow gRPC over insecure channels, if not the server must use TLS")
+-	cmd.Flags().Int64(FlagHeight, 0, "Use a specific height to query state at (this can error if the node is pruning state)")
+-	cmd.Flags().StringP(FlagOutput, "o", "text", "Output format (text|json)")
++	f := cmd.Flags()
++	AddNodeFlags(f, QueryFlagOpts)
++
++	f.Int64(FlagHeight, 0, "Use a specific height to query state at (this can error if the node is pruning state)")
++	f.StringP(FlagOutput, "o", "text", "Output format (text|json)")
+ 
+ 	// some base commands does not require chainID e.g `simd testnet` while subcommands do
+ 	// hence the flag should not be required for those commands
+ 	_ = cmd.MarkFlagRequired(FlagChainID)
+ }
+ 
++// AddNodeFlags adds common node network flags to a flag set.
++func AddNodeFlags(f *pflag.FlagSet, opts *FlagOpts) {
++	if opts != nil && opts.DefaultGRPC {
++		f.String(FlagNode, "", FlagNodeDesc)
++		f.String(FlagGRPC, "localhost:9090", FlagGRPCDesc)
++		f.Bool(FlagGRPCInsecure, true, FlagGRPCInsecureDesc)
++	} else {
++		f.String(FlagNode, "tcp://localhost:26657", FlagNodeDesc)
++		f.String(FlagGRPC, "", FlagGRPCDesc)
++		f.Bool(FlagGRPCInsecure, false, FlagGRPCInsecureDesc)
++	}
++
++	if opts != nil {
++		for _, flag := range opts.AdditionalFlags {
++			f.AddFlag(flag)
++		}
++	}
++}
++
+ // AddTxFlagsToCmd adds common flags to a module tx command.
+ func AddTxFlagsToCmd(cmd *cobra.Command) {
+ 	f := cmd.Flags()
+@@ -127,7 +165,9 @@ func AddTxFlagsToCmd(cmd *cobra.Command) {
+ 	f.String(FlagNote, "", "Note to add a description to the transaction (previously --memo)")
+ 	f.String(FlagFees, "", "Fees to pay along with transaction; eg: 10uatom")
+ 	f.String(FlagGasPrices, "", "Determine the transaction fee by multiplying max gas units by gas prices (e.g. 0.1uatom), rounding up to nearest denom unit")
+-	f.String(FlagNode, "tcp://localhost:26657", "<host>:<port> to CometBFT rpc interface for this chain")
++
++	AddNodeFlags(f, TxFlagOpts)
++
+ 	f.Bool(FlagUseLedger, false, "Use a connected Ledger device")
+ 	f.Float64(FlagGasAdjustment, DefaultGasAdjustment, "adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored ")
+ 	f.StringP(FlagBroadcastMode, "b", BroadcastSync, "Transaction broadcasting mode (sync|async)")
+-- 
+2.47.0
+

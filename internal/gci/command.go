@@ -17,6 +17,7 @@ import (
 	simdcmd "cosmossdk.io/simapp/v2/simdv2/cmd"
 	stakingtypes "cosmossdk.io/x/staking/types"
 	"github.com/cosmos/cosmos-sdk/client"
+	sdkflags "github.com/cosmos/cosmos-sdk/client/flags"
 	ced25519 "github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -37,6 +38,11 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/spf13/cobra"
 )
+
+func init() {
+	sdkflags.QueryFlagOpts = &sdkflags.FlagOpts{DefaultGRPC: true}
+	sdkflags.TxFlagOpts = &sdkflags.FlagOpts{DefaultGRPC: true}
+}
 
 // NewSimdRootCmdWithGordian calls a simdcmd function we have added
 // in order to get simd start to use Gordian instead of Comet.
