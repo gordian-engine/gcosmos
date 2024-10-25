@@ -17,6 +17,7 @@ import (
 	simdcmd "cosmossdk.io/simapp/v2/simdv2/cmd"
 	stakingtypes "cosmossdk.io/x/staking/types"
 	"github.com/cosmos/cosmos-sdk/client"
+	sdkflags "github.com/cosmos/cosmos-sdk/client/flags"
 	ced25519 "github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -37,6 +38,21 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/spf13/cobra"
 )
+
+func init() {
+	// HACK: add query flags to the root command that use insecure localhost grpc transport by default.
+	sdkflags.AddQueryFlagsToCmd = func(cmd *cobra.Command) {
+		cmd.Flags().String(sdkflags.FlagNode, "", "<host>:<port> to CometBFT RPC interface for this chain")
+		cmd.Flags().String(sdkflags.FlagGRPC, "localhost:9090", "the gRPC endpoint to use for this chain")
+		cmd.Flags().Bool(sdkflags.FlagGRPCInsecure, true, "allow gRPC over insecure channels, if not the server must use TLS")
+		cmd.Flags().Int64(sdkflags.FlagHeight, 0, "Use a specific height to query state at (this can error if the node is pruning state)")
+		cmd.Flags().StringP(sdkflags.FlagOutput, "o", "text", "Output format (text|json)")
+
+		// some base commands does not require chainID e.g `simd testnet` while subcommands do
+		// hence the flag should not be required for those commands
+		_ = cmd.MarkFlagRequired(sdkflags.FlagChainID)
+	}
+}
 
 // NewSimdRootCmdWithGordian calls a simdcmd function we have added
 // in order to get simd start to use Gordian instead of Comet.

@@ -1,0 +1,35 @@
+From fd347c6e2daefcb794da9d7b86d179d81dea6472 Mon Sep 17 00:00:00 2001
+From: Andrew Gouin <andrew@gouin.io>
+Date: Fri, 25 Oct 2024 13:58:58 -0600
+Subject: [PATCH] Hack: make AddQueryFlagsToCmd and AddTxFlagsToCmd vars so
+ they can be overridden
+
+---
+ client/flags/flags.go | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/client/flags/flags.go b/client/flags/flags.go
+index d44ed31679..b01790f95f 100644
+--- a/client/flags/flags.go
++++ b/client/flags/flags.go
+@@ -103,7 +103,7 @@ const (
+ var LineBreak = &cobra.Command{Run: func(*cobra.Command, []string) {}}
+ 
+ // AddQueryFlagsToCmd adds common flags to a module query command.
+-func AddQueryFlagsToCmd(cmd *cobra.Command) {
++var AddQueryFlagsToCmd = func(cmd *cobra.Command) {
+ 	cmd.Flags().String(FlagNode, "tcp://localhost:26657", "<host>:<port> to CometBFT RPC interface for this chain")
+ 	cmd.Flags().String(FlagGRPC, "", "the gRPC endpoint to use for this chain")
+ 	cmd.Flags().Bool(FlagGRPCInsecure, false, "allow gRPC over insecure channels, if not the server must use TLS")
+@@ -116,7 +116,7 @@ func AddQueryFlagsToCmd(cmd *cobra.Command) {
+ }
+ 
+ // AddTxFlagsToCmd adds common flags to a module tx command.
+-func AddTxFlagsToCmd(cmd *cobra.Command) {
++var AddTxFlagsToCmd = func(cmd *cobra.Command) {
+ 	f := cmd.Flags()
+ 	f.StringP(FlagOutput, "o", OutputFormatJSON, "Output format (text|json)")
+ 	if cmd.Flag(FlagFrom) == nil { // avoid flag redefinition when it's already been added by AutoCLI
+-- 
+2.47.0
+
