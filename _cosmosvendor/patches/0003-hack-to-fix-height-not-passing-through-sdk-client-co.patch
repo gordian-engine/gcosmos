@@ -1,0 +1,34 @@
+From abcb8e5e1c3c37d7a11ad4a5555cf2948d397831 Mon Sep 17 00:00:00 2001
+From: Andrew Gouin <andrew@gouin.io>
+Date: Sat, 26 Oct 2024 11:18:57 -0600
+Subject: [PATCH 3/3] hack to fix height not passing through sdk client context
+
+---
+ x/auth/types/account_retriever.go | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/x/auth/types/account_retriever.go b/x/auth/types/account_retriever.go
+index c46d433065..de59c9fc63 100644
+--- a/x/auth/types/account_retriever.go
++++ b/x/auth/types/account_retriever.go
+@@ -45,10 +45,16 @@ func (ar AccountRetriever) GetAccountWithHeight(clientCtx client.Context, addr s
+ 	}
+ 
+ 	blockHeight := header.Get(grpctypes.GRPCBlockHeightHeader)
+-	if l := len(blockHeight); l != 1 {
++	l := len(blockHeight)
++	if l > 1 {
+ 		return nil, 0, fmt.Errorf("unexpected '%s' header length; got %d, expected: %d", grpctypes.GRPCBlockHeightHeader, l, 1)
+ 	}
+ 
++	// TODO remove this once gordian height is propagated through the SDK properly
++	if l == 0 {
++		blockHeight = append(blockHeight, "0")
++	}
++
+ 	nBlockHeight, err := strconv.Atoi(blockHeight[0])
+ 	if err != nil {
+ 		return nil, 0, fmt.Errorf("failed to parse block height: %w", err)
+-- 
+2.47.0
+

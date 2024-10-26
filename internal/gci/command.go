@@ -40,14 +40,16 @@ import (
 )
 
 func init() {
-	sdkflags.QueryFlagOpts = &sdkflags.NodeFlagOpts{DefaultGRPC: true}
-	sdkflags.TxFlagOpts = &sdkflags.NodeFlagOpts{DefaultGRPC: true}
+	sdkflags.CliNodeFlagOpts = &sdkflags.CmdNodeFlagOpts{
+		QueryOpts: &sdkflags.NodeFlagOpts{DefaultGRPC: "localhost:9090"},
+		TxOpts:    &sdkflags.NodeFlagOpts{DefaultGRPC: "localhost:9092"},
+	}
 }
 
 // NewSimdRootCmdWithGordian calls a simdcmd function we have added
 // in order to get simd start to use Gordian instead of Comet.
 func NewSimdRootCmdWithGordian(lifeCtx context.Context, log *slog.Logger) *cobra.Command {
-	return simdcmd.NewRootCmdWithConsensusComponent(func(cc client.Context) serverv2.ServerComponent[transaction.Tx] {
+	cmd := simdcmd.NewRootCmdWithConsensusComponent(func(cc client.Context) serverv2.ServerComponent[transaction.Tx] {
 		codec := gccodec.NewTxDecoder(cc.TxConfig)
 		c, err := gserver.NewComponent(lifeCtx, log, codec, cc.Codec)
 		if err != nil {
@@ -55,6 +57,34 @@ func NewSimdRootCmdWithGordian(lifeCtx context.Context, log *slog.Logger) *cobra
 		}
 		return c
 	})
+
+	rootPersistentPreRunE := cmd.PersistentPreRunE
+
+	// Override TM RPC client on clientCtx to use gordian's gRPC client.
+	cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		if err := rootPersistentPreRunE(cmd, args); err != nil {
+			return err
+		}
+
+		grpcAddress, _ := cmd.Flags().GetString(sdkflags.FlagGRPCTx)
+		if grpcAddress == "" {
+			return nil
+		}
+
+		grpcInsecure, _ := cmd.Flags().GetBool(sdkflags.FlagGRPCInsecure)
+
+		clientShim, err := gserver.NewClient(cmd, grpcAddress, grpcInsecure)
+		if err != nil {
+			return fmt.Errorf("failed to create gRPC client: %w", err)
+		}
+
+		clientCtx := client.GetClientContextFromCmd(cmd)
+		clientCtx = clientCtx.WithClient(clientShim)
+
+		return client.SetCmdClientContext(cmd, clientCtx)
+	}
+
+	return cmd
 }
 
 func StartGordianCommand() *cobra.Command {

@@ -1,17 +1,26 @@
-From a8c0a22755d5f44fb2e328cfd1b4ee9202d6399d Mon Sep 17 00:00:00 2001
+From 9fcefeaab547f7ebb883d5a3127eea8420b04eea Mon Sep 17 00:00:00 2001
 From: Andrew Gouin <andrew@gouin.io>
 Date: Fri, 25 Oct 2024 16:25:31 -0600
-Subject: [PATCH 2/2] fix: allow customizing query and tx flags
+Subject: [PATCH 2/3] fix: allow customizing query and tx flags
 
 ---
- client/flags/flags.go | 52 ++++++++++++++++++++++++++++++++++++++-----
- 1 file changed, 46 insertions(+), 6 deletions(-)
+ client/flags/flags.go | 90 ++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 84 insertions(+), 6 deletions(-)
 
 diff --git a/client/flags/flags.go b/client/flags/flags.go
-index d44ed31679..41664664b1 100644
+index d44ed31679..14c798329e 100644
 --- a/client/flags/flags.go
 +++ b/client/flags/flags.go
-@@ -90,6 +90,10 @@ const (
+@@ -49,6 +49,8 @@ const (
+ 	FlagNode             = "node"
+ 	FlagGRPC             = "grpc-addr"
+ 	FlagGRPCInsecure     = "grpc-insecure"
++	FlagGRPCTx           = "grpc-addr-tx"
++	FlagGRPCInsecureTx   = "grpc-insecure-tx"
+ 	FlagHeight           = "height"
+ 	FlagGasAdjustment    = "gas-adjustment"
+ 	FlagFrom             = "from"
+@@ -90,6 +92,10 @@ const (
  	FlagLogLevel   = "log_level"
  	FlagLogFormat  = "log_format"
  	FlagLogNoColor = "log_no_color"
@@ -22,14 +31,20 @@ index d44ed31679..41664664b1 100644
  )
  
  // List of supported output formats
-@@ -98,23 +102,57 @@ const (
+@@ -98,23 +104,93 @@ const (
  	OutputFormatText = "text"
  )
  
-+// NodeFlagOpts defines customization options for command flags.
++// CmdNodeFlagOpts defines customization options for query and transaction command node flags.
++type CmdNodeFlagOpts struct {
++	QueryOpts *NodeFlagOpts
++	TxOpts    *NodeFlagOpts
++}
++
++// NodeFlagOpts defines customization options for node flags.
 +type NodeFlagOpts struct {
-+	// DefaultGRPC specifies whether GRPC should be used by default over RPC.
-+	DefaultGRPC bool
++	// DefaultGRPC, if defined, specifies the GRPC address which should be used by default over Comet RPC.
++	DefaultGRPC string
 +
 +	// AdditionalFlags specifies additional flags that should be added to the command.
 +	AdditionalFlags []*pflag.Flag
@@ -37,8 +52,7 @@ index d44ed31679..41664664b1 100644
 +
 +var (
 +	// App can override these default flag options
-+	QueryFlagOpts *NodeFlagOpts = nil
-+	TxFlagOpts    *NodeFlagOpts = nil
++	CliNodeFlagOpts *CmdNodeFlagOpts = nil
 +)
 +
  // LineBreak can be included in a command list to provide a blank line
@@ -53,7 +67,8 @@ index d44ed31679..41664664b1 100644
 -	cmd.Flags().Int64(FlagHeight, 0, "Use a specific height to query state at (this can error if the node is pruning state)")
 -	cmd.Flags().StringP(FlagOutput, "o", "text", "Output format (text|json)")
 +	f := cmd.Flags()
-+	AddNodeFlags(f, QueryFlagOpts)
++
++	AddNodeFlags(f, false)
 +
 +	f.Int64(FlagHeight, 0, "Use a specific height to query state at (this can error if the node is pruning state)")
 +	f.StringP(FlagOutput, "o", "text", "Output format (text|json)")
@@ -64,19 +79,49 @@ index d44ed31679..41664664b1 100644
  }
  
 +// AddNodeFlags adds common node network flags to a flag set.
-+func AddNodeFlags(f *pflag.FlagSet, opts *NodeFlagOpts) {
-+	if opts != nil && opts.DefaultGRPC {
-+		f.String(FlagNode, "", FlagNodeDesc)
-+		f.String(FlagGRPC, "localhost:9090", FlagGRPCDesc)
-+		f.Bool(FlagGRPCInsecure, true, FlagGRPCInsecureDesc)
-+	} else {
++func AddNodeFlags(f *pflag.FlagSet, tx bool) {
++	if CliNodeFlagOpts == nil {
 +		f.String(FlagNode, "tcp://localhost:26657", FlagNodeDesc)
 +		f.String(FlagGRPC, "", FlagGRPCDesc)
 +		f.Bool(FlagGRPCInsecure, false, FlagGRPCInsecureDesc)
++		return
 +	}
 +
-+	if opts != nil {
-+		for _, flag := range opts.AdditionalFlags {
++	qOpts, txOpts := CliNodeFlagOpts.QueryOpts, CliNodeFlagOpts.TxOpts
++
++	addDefaultCometRPCNodeFlag := false
++	if qOpts == nil || qOpts.DefaultGRPC == "" {
++		addDefaultCometRPCNodeFlag = true
++		f.String(FlagGRPC, "", FlagGRPCDesc)
++		f.Bool(FlagGRPCInsecure, false, FlagGRPCInsecureDesc)
++	} else {
++		f.String(FlagGRPC, qOpts.DefaultGRPC, FlagGRPCDesc)
++		f.Bool(FlagGRPCInsecure, true, FlagGRPCInsecureDesc)
++	}
++	if tx {
++		if txOpts == nil || txOpts.DefaultGRPC == "" {
++			addDefaultCometRPCNodeFlag = true
++			f.String(FlagGRPCTx, "", FlagGRPCDesc)
++			f.Bool(FlagGRPCInsecureTx, false, FlagGRPCInsecureDesc)
++		} else {
++			f.String(FlagGRPCTx, txOpts.DefaultGRPC, FlagGRPCDesc)
++			f.Bool(FlagGRPCInsecureTx, true, FlagGRPCInsecureDesc)
++		}
++	}
++	if addDefaultCometRPCNodeFlag {
++		f.String(FlagNode, "tcp://localhost:26657", FlagNodeDesc)
++	} else {
++		f.String(FlagNode, "", FlagNodeDesc)
++	}
++
++	if qOpts != nil {
++		for _, flag := range qOpts.AdditionalFlags {
++			f.AddFlag(flag)
++		}
++	}
++
++	if tx && txOpts != nil {
++		for _, flag := range txOpts.AdditionalFlags {
 +			f.AddFlag(flag)
 +		}
 +	}
@@ -85,13 +130,13 @@ index d44ed31679..41664664b1 100644
  // AddTxFlagsToCmd adds common flags to a module tx command.
  func AddTxFlagsToCmd(cmd *cobra.Command) {
  	f := cmd.Flags()
-@@ -127,7 +165,9 @@ func AddTxFlagsToCmd(cmd *cobra.Command) {
+@@ -127,7 +203,9 @@ func AddTxFlagsToCmd(cmd *cobra.Command) {
  	f.String(FlagNote, "", "Note to add a description to the transaction (previously --memo)")
  	f.String(FlagFees, "", "Fees to pay along with transaction; eg: 10uatom")
  	f.String(FlagGasPrices, "", "Determine the transaction fee by multiplying max gas units by gas prices (e.g. 0.1uatom), rounding up to nearest denom unit")
 -	f.String(FlagNode, "tcp://localhost:26657", "<host>:<port> to CometBFT rpc interface for this chain")
 +
-+	AddNodeFlags(f, TxFlagOpts)
++	AddNodeFlags(f, true)
 +
  	f.Bool(FlagUseLedger, false, "Use a connected Ledger device")
  	f.Float64(FlagGasAdjustment, DefaultGasAdjustment, "adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored ")
