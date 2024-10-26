@@ -12,7 +12,7 @@ go build -o gcosmos .
 
 ./gcosmos init moniker --chain-id=${CHAIN_ID}
 
-./gcosmos keys add val
+./gcosmos keys add val --no-backup --keyring-backend=test
 ./gcosmos genesis add-genesis-account val 10000000stake
 ./gcosmos genesis gentx val 1000000stake --chain-id=${CHAIN_ID}
 ./gcosmos genesis collect-gentxs
