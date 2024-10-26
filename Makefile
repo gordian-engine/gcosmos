@@ -27,5 +27,5 @@ install: deps
 	go install
 
 .PHONY: start
-start: install
+start: build
 	./scripts/run_gcosmos.sh
