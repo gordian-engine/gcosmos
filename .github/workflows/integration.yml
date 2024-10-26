@@ -27,10 +27,9 @@ jobs:
         git config --global user.name "abc"
         git config --global user.email "abc@example.com"
 
-    - name: Clone Cosmos-SDK with patches
+    - name: Vendor and patch SDK, build binary
       run: |
-        bash _cosmosvendor/sync_sdk.bash
-        go build -o gcosmos .
+        make build
 
     - name: Build, setup, and start background gcosmos
       run: |

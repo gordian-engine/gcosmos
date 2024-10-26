@@ -19,5 +19,13 @@ jobs:
       with:
         go-version-file: go.mod # Use whatever version is in the header of go.mod.
 
+    - name: Vendor and patch SDK
+      run: make deps
+      env:
+        GIT_AUTHOR_NAME: github actions
+        GIT_AUTHOR_EMAIL: nobody@example.com
+        GIT_COMMITTER_NAME: github actions
+        GIT_COMMITTER_EMAIL: nobody@example.com
+
     - name: Test
       run: go test -timeout=5m ./...
