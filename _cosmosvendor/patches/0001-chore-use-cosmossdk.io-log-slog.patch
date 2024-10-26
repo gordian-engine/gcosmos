@@ -1,4 +1,4 @@
-From 0cb98710913f2c9e2ca2e4c51eab08716295ad1f Mon Sep 17 00:00:00 2001
+From ed86e53dc20994a2a6b7b494a66a1c6e3dd69ea8 Mon Sep 17 00:00:00 2001
 From: Mark Rushakoff <mark@strange.love>
 Date: Fri, 25 Oct 2024 15:35:39 -0400
 Subject: [PATCH 1/2] chore: use cosmossdk.io/log/slog

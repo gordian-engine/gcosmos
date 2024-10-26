@@ -1,4 +1,4 @@
-From 6d67780a97baabdb7c02ff408079eb417bb43e38 Mon Sep 17 00:00:00 2001
+From a8c0a22755d5f44fb2e328cfd1b4ee9202d6399d Mon Sep 17 00:00:00 2001
 From: Andrew Gouin <andrew@gouin.io>
 Date: Fri, 25 Oct 2024 16:25:31 -0600
 Subject: [PATCH 2/2] fix: allow customizing query and tx flags
@@ -8,7 +8,7 @@ Subject: [PATCH 2/2] fix: allow customizing query and tx flags
  1 file changed, 46 insertions(+), 6 deletions(-)
 
 diff --git a/client/flags/flags.go b/client/flags/flags.go
-index d44ed31679..b4992e662f 100644
+index d44ed31679..41664664b1 100644
 --- a/client/flags/flags.go
 +++ b/client/flags/flags.go
 @@ -90,6 +90,10 @@ const (
@@ -26,8 +26,8 @@ index d44ed31679..b4992e662f 100644
  	OutputFormatText = "text"
  )
  
-+// FlagOpts defines customization options for command flags.
-+type FlagOpts struct {
++// NodeFlagOpts defines customization options for command flags.
++type NodeFlagOpts struct {
 +	// DefaultGRPC specifies whether GRPC should be used by default over RPC.
 +	DefaultGRPC bool
 +
@@ -37,8 +37,8 @@ index d44ed31679..b4992e662f 100644
 +
 +var (
 +	// App can override these default flag options
-+	QueryFlagOpts *FlagOpts = nil
-+	TxFlagOpts    *FlagOpts = nil
++	QueryFlagOpts *NodeFlagOpts = nil
++	TxFlagOpts    *NodeFlagOpts = nil
 +)
 +
  // LineBreak can be included in a command list to provide a blank line
@@ -64,7 +64,7 @@ index d44ed31679..b4992e662f 100644
  }
  
 +// AddNodeFlags adds common node network flags to a flag set.
-+func AddNodeFlags(f *pflag.FlagSet, opts *FlagOpts) {
++func AddNodeFlags(f *pflag.FlagSet, opts *NodeFlagOpts) {
 +	if opts != nil && opts.DefaultGRPC {
 +		f.String(FlagNode, "", FlagNodeDesc)
 +		f.String(FlagGRPC, "localhost:9090", FlagGRPCDesc)
