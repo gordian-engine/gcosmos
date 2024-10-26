@@ -87,7 +87,7 @@ func (c *Client) BroadcastTxSync(ctx context.Context, tx cmttypes.Tx) (*coretype
 		return nil, fmt.Errorf("failed to simulate transaction: %w", err)
 	}
 	if res.Error != "" {
-		return nil, fmt.Errorf("failed to simulate transaction: %s", res.Error)
+		return nil, fmt.Errorf("failure expecting simulated transaction: %s", res.Error)
 	}
 
 	res, err = c.gclient.SubmitTransaction(ctx, &ggrpc.SubmitTransactionRequest{
@@ -97,7 +97,7 @@ func (c *Client) BroadcastTxSync(ctx context.Context, tx cmttypes.Tx) (*coretype
 		return nil, fmt.Errorf("failed to submit transaction: %w", err)
 	}
 	if res.Error != "" {
-		return nil, fmt.Errorf("failed to submit transaction: %s", res.Error)
+		return nil, fmt.Errorf("failure expecting transaction: %s", res.Error)
 	}
 
 	return &coretypes.ResultBroadcastTx{
