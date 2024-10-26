@@ -40,8 +40,8 @@ import (
 )
 
 func init() {
-	sdkflags.QueryFlagOpts = &sdkflags.FlagOpts{DefaultGRPC: true}
-	sdkflags.TxFlagOpts = &sdkflags.FlagOpts{DefaultGRPC: true}
+	sdkflags.QueryFlagOpts = &sdkflags.NodeFlagOpts{DefaultGRPC: true}
+	sdkflags.TxFlagOpts = &sdkflags.NodeFlagOpts{DefaultGRPC: true}
 }
 
 // NewSimdRootCmdWithGordian calls a simdcmd function we have added
