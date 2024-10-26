@@ -3,71 +3,45 @@
 This repository integrates [Gordian](https://github.com/gordian-engine/gordian)
 with [the Cosmos SDK](https://github.com/cosmos/cosmos-sdk).
 
-## Setup
+## Quickstart
 
-We are currently using a local, patched clone of the SDK in tandem with Go workspaces.
-It is a bit unconventional to commit a Go workspace file, but while both Gordian and the Cosmos SDK
-are being actively changed, a fixed Go workspace fits well for now.
-
-From the root directory, run `make deps` to clone or fetch and checkout
-a "known working" version of the Cosmos SDK compatible with the current gcosmos tree,
-and then apply any currently necessary patches to the SDK.
-
-### New patches
-
-New patches to the SDK should build upon the existing patches,
-so long as the existing patches are necessary.
-
-To continue adding patches on top of the existing ones,
-the simplest workflow is:
-
-1. Ensure you are already synced via `make deps`
-2. Ensure you have the latest SDK commit, typically via `git fetch` inside the `_cosmosvendor/cosmos-sdk` directory.
-3. Rebase the existing patch set onto the latest commit, typically with `git rebase origin/main`. Address conflicts as needed.
-4. Optionally commit new code to your SDK checkout.
-4. From your new rebased set of patches, within the `_cosmosvendor/cosmos-sdk` directory,
-   run `git format-patch -o ../patches origin/main` to overwrite the existing set of patches with a new set that no longer has conflicts.
-5. Be sure to update `_cosmosvendor/COSMOS_SDK.commit`.
-6. Double check that running `_cosmosvendor/sync_sdk.bash` still results in passing tests.
-
-The set of SDK patches is minimal for now, and our goal is to depend on a tagged release of the SDK
-instead of having to maintain a patched version.
-
-## Running
-
-Begin running the updated simapp commands from the `gcosmos` directory.
+Start the example Gordian-backed Cosmos SDK chain with one validator
 
 ```bash
-sh ./scripts/run_gcosmos.sh
+CHAIN_ID=gchain-1 make start
 ```
 
 ### Interact
+
+In a second terminal, interact with the running chain
+
+Show validator address
+
 ```bash
-# Install the grpcurl binary in your relative directory to interact with the GRPC server.
-# GOBIN="$PWD" go install github.com/fullstorydev/grpcurl/cmd/grpcurl@v1
+VAL_ADDR=$(gcosmos keys show val --address)
+echo $VAL_ADDR
+```
 
-./grpcurl -plaintext localhost:9092 list
-./grpcurl -plaintext localhost:9092 gordian.server.v1.GordianGRPC/GetBlocksWatermark
-./grpcurl -plaintext localhost:9092 gordian.server.v1.GordianGRPC/GetValidators
-
-./grpcurl -plaintext -d '{"address":"cosmos1r5v5srda7xfth3hn2s26txvrcrntldjumt8mhl","denom":"stake"}' localhost:9092 gordian.server.v1.GordianGRPC/QueryAccountBalance
+Query bank balance of validator, it has `9000000stake`
+```bash
+gcosmos q bank balance $VAL_ADDR stake
 ```
 
 ### Transaction Testing
+
+Send `100stake` from the validator to a new account.
+
 ```bash
-./gcosmos tx bank send val cosmos10r39fueph9fq7a6lgswu4zdsg8t3gxlqvvvyvn 1stake --chain-id=localchain-1 --generate-only > example-tx.json
-
-# TODO: get account number
-./gcosmos tx sign ./example-tx.json --offline --from=val --sequence=1 --account-number=0 --chain-id=localchain-1 --keyring-backend=test > example-tx-signed.json
-
-./grpcurl -plaintext -emit-defaults -d '{"tx":"'$(cat example-tx-signed.json | base64 | tr -d '\n')'"}' localhost:9092 gordian.server.v1.GordianGRPC/SimulateTransaction
-
-./grpcurl -plaintext -emit-defaults -d '{"tx":"'$(cat example-tx-signed.json | base64 | tr -d '\n')'"}' localhost:9092 gordian.server.v1.GordianGRPC/SubmitTransaction
-
-./grpcurl -plaintext -d '{"address":"cosmos10r39fueph9fq7a6lgswu4zdsg8t3gxlqvvvyvn","denom":"stake"}' localhost:9092 gordian.server.v1.GordianGRPC/QueryAccountBalance
+gcosmos --chain-id gchain-1 tx bank send val cosmos10r39fueph9fq7a6lgswu4zdsg8t3gxlqvvvyvn 100stake
 ```
 
-## Hacking on a demo with four validators
+Confirm the balance in the new account, it now has `100stake`
+
+```bash
+gcosmos q bank balance cosmos10r39fueph9fq7a6lgswu4zdsg8t3gxlqvvvyvn stake
+```
+
+## Multiple validator example
 
 We have a current hack that uses a test setup with four validators,
 and then keeps them alive so that you can temporarily interact with the network.

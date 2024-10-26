@@ -21,3 +21,11 @@ deps:
 build: deps
 	go build .
 	@echo >&2 executable saved to ./gcosmos
+
+.PHONY: install
+install: deps
+	go install
+
+.PHONY: start
+start: install
+	./scripts/run_gcosmos.sh
