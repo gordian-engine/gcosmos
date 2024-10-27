@@ -533,7 +533,7 @@ func TestTx_single_delegate(t *testing.T) {
 		res := c.RootCmds[0].Run(
 			// val0 is the name of the first validator key,
 			// which should be available on the first root command.
-			"tx", "staking", "delegate", "val0", delegateAmount, "--from", c.FixedAddresses[0],
+			"tx", "--chain-id", t.Name(), "staking", "delegate", "val0", delegateAmount, "--from", c.FixedAddresses[0],
 			"--generate-only",
 		)
 		res.NoError(t)
