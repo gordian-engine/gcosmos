@@ -35,12 +35,11 @@ jobs:
       run: |
         make build
         make testnet-start &
-        while ! nc -z localhost 26657; do
-          sleep 1
-        done;
+        while ! nc -z localhost 26657; do sleep 1; done
 
     - name: Verify gcosmos is running
       run: |
+        sleep 5
         RESP=$(curl -s http://127.0.0.1:26657/blocks/watermark --max-time 5 | jq .VotingHeight)
         if [[ "$RESP" -le 1 ]]; then
           echo "Failed to start gcosmos"
