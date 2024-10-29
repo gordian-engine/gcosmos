@@ -8,7 +8,7 @@ with [the Cosmos SDK](https://github.com/cosmos/cosmos-sdk).
 Start the example Gordian-backed Cosmos SDK chain with four validators
 
 ```bash
-CHAIN_ID=gchain-1 make testnet-start
+make testnet-start
 ```
 
 ### Interact
