@@ -18,17 +18,15 @@ trap 'rm -rf ./test; echo; echo "Gordian Cosmos testnet stopped"; exit' INT
 ./gcosmos init val3 --chain-id=${CHAIN_ID} --home ./test/val3
 ./gcosmos init val4 --chain-id=${CHAIN_ID} --home ./test/val4
 
-./gcosmos config set app telemetry.enable false --home ./test/val1
+# Disable conflicting services on vals 2-4
 ./gcosmos config set app telemetry.enable false --home ./test/val2
 ./gcosmos config set app telemetry.enable false --home ./test/val3
 ./gcosmos config set app telemetry.enable false --home ./test/val4
 
-./gcosmos config set app grpc.address localhost:0 --home ./test/val1
 ./gcosmos config set app grpc.address localhost:0 --home ./test/val2
 ./gcosmos config set app grpc.address localhost:0 --home ./test/val3
 ./gcosmos config set app grpc.address localhost:0 --home ./test/val4
 
-./gcosmos config set app rest.enable false --home ./test/val1
 ./gcosmos config set app rest.enable false --home ./test/val2
 ./gcosmos config set app rest.enable false --home ./test/val3
 ./gcosmos config set app rest.enable false --home ./test/val4

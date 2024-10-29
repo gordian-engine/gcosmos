@@ -18,11 +18,11 @@ In a second terminal, interact with the running chain
 Show validator address
 
 ```bash
-VAL_ADDR=$(./gcosmos keys show val --address)
+VAL_ADDR=$(./gcosmos --home ./test/val1 keys show val --address)
 echo $VAL_ADDR
 ```
 
-Query bank balance of validator, it has `9000000stake`
+Query bank balance of validator, it has `9000000stake`.
 ```bash
 ./gcosmos q bank balance $VAL_ADDR stake
 ```
@@ -33,13 +33,13 @@ Shutdown the testnet by pressing Ctrl+C in the first terminal.
 
 ### Transaction Testing
 
-Send `100stake` from the validator to a new account.
+Send `100stake` from the first validator to a new account.
 
 ```bash
-./gcosmos --chain-id gchain-1 tx bank send val cosmos10r39fueph9fq7a6lgswu4zdsg8t3gxlqvvvyvn 100stake
+./gcosmos --home ./test/val1 --chain-id gchain-1 tx bank send val cosmos10r39fueph9fq7a6lgswu4zdsg8t3gxlqvvvyvn 100stake
 ```
 
-Confirm the balance in the new account, it now has `100stake`
+Wait a few seconds for the block to be produced, then confirm the balance in the new account. It now has `100stake`.
 
 ```bash
 ./gcosmos q bank balance cosmos10r39fueph9fq7a6lgswu4zdsg8t3gxlqvvvyvn stake
