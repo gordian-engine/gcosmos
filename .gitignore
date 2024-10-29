@@ -28,4 +28,5 @@ grpcurl
 # This is unique every generation and will be overriden frequently.
 example-tx*
 
+# make testnet-start will create a test directory with subfolders for each node of the test.
 test/
