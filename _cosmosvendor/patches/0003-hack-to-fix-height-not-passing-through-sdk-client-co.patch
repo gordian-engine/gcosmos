@@ -1,12 +1,126 @@
-From abcb8e5e1c3c37d7a11ad4a5555cf2948d397831 Mon Sep 17 00:00:00 2001
+From 2b13a63a06740e65303292bf7bf5db2f4b7140ed Mon Sep 17 00:00:00 2001
 From: Andrew Gouin <andrew@gouin.io>
 Date: Sat, 26 Oct 2024 11:18:57 -0600
 Subject: [PATCH 3/3] hack to fix height not passing through sdk client context
 
 ---
- x/auth/types/account_retriever.go | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+ client/flags/flags.go             | 94 +++++++++++++++----------------
+ x/auth/types/account_retriever.go |  8 ++-
+ 2 files changed, 54 insertions(+), 48 deletions(-)
 
+diff --git a/client/flags/flags.go b/client/flags/flags.go
+index 14c798329e..a805f66a07 100644
+--- a/client/flags/flags.go
++++ b/client/flags/flags.go
+@@ -42,49 +42,49 @@ const (
+ 
+ // List of CLI flags
+ const (
+-	FlagHome             = "home"
+-	FlagKeyringDir       = "keyring-dir"
+-	FlagUseLedger        = "ledger"
+-	FlagChainID          = "chain-id"
+-	FlagNode             = "node"
+-	FlagGRPC             = "grpc-addr"
+-	FlagGRPCInsecure     = "grpc-insecure"
+-	FlagGRPCTx           = "grpc-addr-tx"
+-	FlagGRPCInsecureTx   = "grpc-insecure-tx"
+-	FlagHeight           = "height"
+-	FlagGasAdjustment    = "gas-adjustment"
+-	FlagFrom             = "from"
+-	FlagName             = "name"
+-	FlagAccountNumber    = "account-number"
+-	FlagSequence         = "sequence"
+-	FlagNote             = "note"
+-	FlagFees             = "fees"
+-	FlagGas              = "gas"
+-	FlagGasPrices        = "gas-prices"
+-	FlagBroadcastMode    = "broadcast-mode"
+-	FlagDryRun           = "dry-run"
+-	FlagGenerateOnly     = "generate-only"
+-	FlagOffline          = "offline"
+-	FlagOutputDocument   = "output-document" // inspired by wget -O
+-	FlagSkipConfirmation = "yes"
+-	FlagProve            = "prove"
+-	FlagKeyringBackend   = "keyring-backend"
+-	FlagPage             = "page"
+-	FlagLimit            = "limit"
+-	FlagSignMode         = "sign-mode"
+-	FlagPageKey          = "page-key"
+-	FlagOffset           = "offset"
+-	FlagCountTotal       = "count-total"
+-	FlagTimeoutTimestamp = "timeout-timestamp"
+-	FlagUnordered        = "unordered"
+-	FlagKeyAlgorithm     = "algo"
+-	FlagKeyType          = "key-type"
+-	FlagFeePayer         = "fee-payer"
+-	FlagFeeGranter       = "fee-granter"
+-	FlagReverse          = "reverse"
+-	FlagTip              = "tip"
+-	FlagAux              = "aux"
+-	FlagInitHeight       = "initial-height"
++	FlagHome                  = "home"
++	FlagKeyringDir            = "keyring-dir"
++	FlagUseLedger             = "ledger"
++	FlagChainID               = "chain-id"
++	FlagNode                  = "node"
++	FlagGRPC                  = "grpc-addr"
++	FlagGRPCInsecure          = "grpc-insecure"
++	FlagGRPCConsensus         = "grpc-addr-consensus"
++	FlagGRPCInsecureConsensus = "grpc-insecure-consensus"
++	FlagHeight                = "height"
++	FlagGasAdjustment         = "gas-adjustment"
++	FlagFrom                  = "from"
++	FlagName                  = "name"
++	FlagAccountNumber         = "account-number"
++	FlagSequence              = "sequence"
++	FlagNote                  = "note"
++	FlagFees                  = "fees"
++	FlagGas                   = "gas"
++	FlagGasPrices             = "gas-prices"
++	FlagBroadcastMode         = "broadcast-mode"
++	FlagDryRun                = "dry-run"
++	FlagGenerateOnly          = "generate-only"
++	FlagOffline               = "offline"
++	FlagOutputDocument        = "output-document" // inspired by wget -O
++	FlagSkipConfirmation      = "yes"
++	FlagProve                 = "prove"
++	FlagKeyringBackend        = "keyring-backend"
++	FlagPage                  = "page"
++	FlagLimit                 = "limit"
++	FlagSignMode              = "sign-mode"
++	FlagPageKey               = "page-key"
++	FlagOffset                = "offset"
++	FlagCountTotal            = "count-total"
++	FlagTimeoutTimestamp      = "timeout-timestamp"
++	FlagUnordered             = "unordered"
++	FlagKeyAlgorithm          = "algo"
++	FlagKeyType               = "key-type"
++	FlagFeePayer              = "fee-payer"
++	FlagFeeGranter            = "fee-granter"
++	FlagReverse               = "reverse"
++	FlagTip                   = "tip"
++	FlagAux                   = "aux"
++	FlagInitHeight            = "initial-height"
+ 	// FlagOutput is the flag to set the output format.
+ 	// This differs from FlagOutputDocument that is used to set the output file.
+ 	FlagOutput = "output"
+@@ -165,11 +165,11 @@ func AddNodeFlags(f *pflag.FlagSet, tx bool) {
+ 	if tx {
+ 		if txOpts == nil || txOpts.DefaultGRPC == "" {
+ 			addDefaultCometRPCNodeFlag = true
+-			f.String(FlagGRPCTx, "", FlagGRPCDesc)
+-			f.Bool(FlagGRPCInsecureTx, false, FlagGRPCInsecureDesc)
++			f.String(FlagGRPCConsensus, "", FlagGRPCDesc)
++			f.Bool(FlagGRPCInsecureConsensus, false, FlagGRPCInsecureDesc)
+ 		} else {
+-			f.String(FlagGRPCTx, txOpts.DefaultGRPC, FlagGRPCDesc)
+-			f.Bool(FlagGRPCInsecureTx, true, FlagGRPCInsecureDesc)
++			f.String(FlagGRPCConsensus, txOpts.DefaultGRPC, FlagGRPCDesc)
++			f.Bool(FlagGRPCInsecureConsensus, true, FlagGRPCInsecureDesc)
+ 		}
+ 	}
+ 	if addDefaultCometRPCNodeFlag {
 diff --git a/x/auth/types/account_retriever.go b/x/auth/types/account_retriever.go
 index c46d433065..de59c9fc63 100644
 --- a/x/auth/types/account_retriever.go
