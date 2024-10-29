@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
 
 	"github.com/cometbft/cometbft/privval"
@@ -72,6 +73,10 @@ func newSeedCommand() *cobra.Command {
 			}
 
 			fmt.Fprintf(cmd.ErrOrStderr(), "Seed running at multiaddrs: %s\n", joinedAddrs)
+
+			c := make(chan os.Signal, 1)
+			signal.Notify(c, os.Interrupt)
+			<-c
 
 			return nil
 		},

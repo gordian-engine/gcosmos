@@ -26,6 +26,6 @@ build: deps
 install: deps
 	go install
 
-.PHONY: start
-start: build
+.PHONY: testnet-start
+testnet-start: build
 	./scripts/run_gcosmos.sh

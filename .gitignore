@@ -27,3 +27,5 @@ grpcurl
 # example-tx are the default json Tx and signed json Tx from the test case found in the README.
 # This is unique every generation and will be overriden frequently.
 example-tx*
+
+test/
