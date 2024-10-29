@@ -4,7 +4,7 @@ CHAIN_ID=${CHAIN_ID:-"localchain-1"}
 G_HTTP_ADDR=${G_HTTP_ADDR:-"26657"}
 G_GRPC_ADDR=${G_GRPC_ADDR:-"9092"}
 
-# cleanup previous run data as gordian can only start from height 0 currently
+# cleanup previous run data
 rm -rf ./test
 mkdir -p ./test/genesis/config/gentx
 
