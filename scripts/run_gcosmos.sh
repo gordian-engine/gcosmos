@@ -80,4 +80,4 @@ SEED_ADDR="$(head -n1 <./test/p2p.seed.txt)"
 ./gcosmos start --g-grpc-addr 127.0.0.1:0 --g-seed-addrs ${SEED_ADDR} --home ./test/val4 &> ./test/val4/node.log &
 
 # Show first val logs in the terminal
-./gcosmos start --g-grpc-addr 127.0.0.1:9092 --g-seed-addrs ${SEED_ADDR} --home ./test/val1 2>&1 | tee ./test/val1/node.log
+./gcosmos start --g-http-addr 127.0.0.1:$G_HTTP_ADDR --g-grpc-addr 127.0.0.1:$G_GRPC_ADDR --g-seed-addrs ${SEED_ADDR} --home ./test/val1 2>&1 | tee ./test/val1/node.log
