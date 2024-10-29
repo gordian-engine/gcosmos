@@ -27,10 +27,6 @@ Query bank balance of validator, it has `9000000stake`.
 ./gcosmos q bank balance $VAL_ADDR stake
 ```
 
-### Shutdown
-
-Shutdown the testnet by pressing Ctrl+C in the first terminal.
-
 ### Transaction Testing
 
 Send `100stake` from the first validator to a new account.
@@ -44,6 +40,10 @@ Wait a few seconds for the block to be produced, then confirm the balance in the
 ```bash
 ./gcosmos q bank balance cosmos10r39fueph9fq7a6lgswu4zdsg8t3gxlqvvvyvn stake
 ```
+
+### Shutdown
+
+Shutdown the testnet by pressing Ctrl+C in the first terminal.
 
 ## Additional Information
 
