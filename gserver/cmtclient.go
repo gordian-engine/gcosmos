@@ -20,7 +20,7 @@ var _ client.CometRPC = (*Client)(nil)
 
 type Client struct {
 	cmd     *cobra.Command
-	gclient ggrpc.GordianGRPCClient
+	gClient ggrpc.GordianGRPCClient
 }
 
 func NewClient(
@@ -34,12 +34,12 @@ func NewClient(
 	}
 	cc, err := grpc.NewClient(grpcAddress, dialOpts...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to dial gRPC: %w", err)
+		return nil, fmt.Errorf("failed to dial gordian gRPC: %w", err)
 	}
 
 	return &Client{
 		cmd:     cmd,
-		gclient: ggrpc.NewGordianGRPCClient(cc),
+		gClient: ggrpc.NewGordianGRPCClient(cc),
 	}, nil
 }
 
@@ -48,10 +48,12 @@ func (c *Client) ABCIInfo(ctx context.Context) (*coretypes.ResultABCIInfo, error
 }
 
 func (c *Client) ABCIQuery(ctx context.Context, path string, data bytes.HexBytes) (*coretypes.ResultABCIQuery, error) {
+	// DO NOT IMPLEMENT unless very good reason to, app level queries should hit SDK grpc or other app interface directly.
 	panic(fmt.Errorf("not implemented"))
 }
 
 func (c *Client) ABCIQueryWithOptions(ctx context.Context, path string, data bytes.HexBytes, opts cmtclient.ABCIQueryOptions) (*coretypes.ResultABCIQuery, error) {
+	// DO NOT IMPLEMENT unless very good reason to, app level queries should hit SDK grpc or other app interface directly.
 	panic(fmt.Errorf("not implemented"))
 }
 
@@ -80,7 +82,7 @@ func (c *Client) BroadcastTxSync(ctx context.Context, tx cmttypes.Tx) (*coretype
 		return nil, fmt.Errorf("failed to encode tx: %w", err)
 	}
 
-	res, err := c.gclient.SimulateTransaction(ctx, &ggrpc.SubmitSimulationTransactionRequest{
+	res, err := c.gClient.SimulateTransaction(ctx, &ggrpc.SubmitSimulationTransactionRequest{
 		Tx: txJson,
 	})
 	if err != nil {
@@ -90,7 +92,7 @@ func (c *Client) BroadcastTxSync(ctx context.Context, tx cmttypes.Tx) (*coretype
 		return nil, fmt.Errorf("failure expecting simulated transaction: %s", res.Error)
 	}
 
-	res, err = c.gclient.SubmitTransaction(ctx, &ggrpc.SubmitTransactionRequest{
+	res, err = c.gClient.SubmitTransaction(ctx, &ggrpc.SubmitTransactionRequest{
 		Tx: txJson,
 	})
 	if err != nil {
@@ -110,7 +112,7 @@ func (c *Client) BroadcastTxSync(ctx context.Context, tx cmttypes.Tx) (*coretype
 }
 
 func (c *Client) Validators(ctx context.Context, height *int64, page, perPage *int) (*coretypes.ResultValidators, error) {
-	valsRes, err := c.gclient.GetValidators(ctx, &ggrpc.GetValidatorsRequest{})
+	valsRes, err := c.gClient.GetValidators(ctx, &ggrpc.GetValidatorsRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get validators: %w", err)
 	}
@@ -136,7 +138,7 @@ func (c *Client) Validators(ctx context.Context, height *int64, page, perPage *i
 }
 
 func (c *Client) Status(ctx context.Context) (*coretypes.ResultStatus, error) {
-	gRes, err := c.gclient.GetBlocksWatermark(ctx, &ggrpc.CurrentBlockRequest{})
+	gRes, err := c.gClient.GetBlocksWatermark(ctx, &ggrpc.CurrentBlockRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get blocks watermark: %w", err)
 	}
@@ -144,7 +146,7 @@ func (c *Client) Status(ctx context.Context) (*coretypes.ResultStatus, error) {
 	// TODO fill out remaining fields
 	return &coretypes.ResultStatus{
 		SyncInfo: coretypes.SyncInfo{
-			LatestBlockHeight: int64(gRes.CommittingHeight) - 1,
+			LatestBlockHeight: int64(gRes.CommittingHeight),
 		},
 	}, nil
 }

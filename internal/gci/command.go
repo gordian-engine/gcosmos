@@ -45,16 +45,16 @@ func NewSimdRootCmdWithGordian(lifeCtx context.Context, log *slog.Logger, homeDi
 			return err
 		}
 
-		grpcAddress, _ := cmd.Flags().GetString(sdkflags.FlagGRPCTx)
+		grpcAddress, _ := cmd.Flags().GetString(sdkflags.FlagGRPCConsensus)
 		if grpcAddress == "" {
 			return nil
 		}
 
-		grpcInsecure, _ := cmd.Flags().GetBool(sdkflags.FlagGRPCInsecure)
+		grpcInsecure, _ := cmd.Flags().GetBool(sdkflags.FlagGRPCInsecureConsensus)
 
 		clientShim, err := gserver.NewClient(cmd, grpcAddress, grpcInsecure)
 		if err != nil {
-			return fmt.Errorf("failed to create gRPC client: %w", err)
+			return fmt.Errorf("failed to create gordian gRPC client: %w", err)
 		}
 
 		clientCtx := client.GetClientContextFromCmd(cmd)

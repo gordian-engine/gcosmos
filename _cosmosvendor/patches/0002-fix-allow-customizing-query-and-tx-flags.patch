@@ -1,4 +1,4 @@
-From 9fcefeaab547f7ebb883d5a3127eea8420b04eea Mon Sep 17 00:00:00 2001
+From 5919943a70d3e554f29f1b0e44bf4b127c3629e3 Mon Sep 17 00:00:00 2001
 From: Andrew Gouin <andrew@gouin.io>
 Date: Fri, 25 Oct 2024 16:25:31 -0600
 Subject: [PATCH 2/3] fix: allow customizing query and tx flags
