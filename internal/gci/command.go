@@ -15,12 +15,10 @@ import (
 	cslog "cosmossdk.io/log/slog"
 	"cosmossdk.io/runtime/v2"
 	serverv2 "cosmossdk.io/server/v2"
-	"cosmossdk.io/simapp/v2"
-	"cosmossdk.io/simapp/v2/simdv2/cmd"
-	simdcmd "cosmossdk.io/simapp/v2/simdv2/cmd"
 	"github.com/cosmos/cosmos-sdk/client"
 	sdkflags "github.com/cosmos/cosmos-sdk/client/flags"
 	nodeservice "github.com/cosmos/cosmos-sdk/client/grpc/node"
+	"github.com/gordian-engine/gcosmos/gcapp"
 	"github.com/gordian-engine/gcosmos/gccodec"
 	"github.com/gordian-engine/gcosmos/gserver"
 	"github.com/spf13/cobra"
@@ -57,15 +55,15 @@ func NewGcosmosCommand(
 		panic(fmt.Errorf("failed to create gserver component: %w", err))
 	}
 
-	configWriter, err := simdcmd.InitRootCmd(
+	addExtraCommands(rootCmd, nil)
+
+	configWriter, err := initRootCommandClientOnly(
 		rootCmd,
 		cslog.NewCustomLogger(log),
-		simdcmd.CommandDependencies[transaction.Tx]{
-			Consensus: component,
-		},
+		component,
 	)
 	if err != nil {
-		panic(fmt.Errorf("failed to initialize root command: %w", err))
+		panic(fmt.Errorf("failed to initialize client-only root command: %w", err))
 	}
 
 	factory, err := serverv2.NewCommandFactory(
@@ -97,46 +95,31 @@ func NewGcosmosCommand(
 		clientCtx       client.Context
 		depinjectConfig = depinject.Configs(
 			depinject.Supply(logger, runtime.GlobalConfig(configMap)),
-			depinject.Provide(cmd.ProvideClientContext),
+			depinject.Provide(gcapp.ProvideClientContext),
 		)
 	)
 	clientCtx = clientCtx.WithHomeDir(homeDir).WithViper("")
 	clientCtx.Viper.SetDefault("home", homeDir)
 
-	commandDeps := cmd.CommandDependencies[transaction.Tx]{
-		GlobalConfig: configMap,
-		TxConfig:     clientCtx.TxConfig,
-
-		// This field is very tricky.
-		// We set it to the previous half-formed component created earlier,
-		// so that if the server app is not required,
-		// the gordian command tree are available for client commands.
-		// If we do go the server command route,
-		// the Consensus field is overwritten.
-		Consensus: component,
-
-		// Simapp is also conditionally set in the server command branch.
-		// ModuleManager is unconditionally set after inspecting the subcommand.
-	}
-
+	var gcApp *gcapp.GCApp
 	if serverv2.IsAppRequired(subCommand) {
 		// server construction
-		commandDeps.SimApp, err = simapp.NewSimApp[transaction.Tx](depinjectConfig, &autoCliOpts, &moduleManager, &clientCtx)
+
+		gcApp, err = gcapp.NewGCApp(depinjectConfig, &autoCliOpts, &moduleManager, &clientCtx)
 		if err != nil {
-			panic(fmt.Errorf("failed to construct new simapp: %w", err))
+			panic(fmt.Errorf("failed to construct new gcapp: %w", err))
 		}
 
-		simApp := commandDeps.SimApp
-
-		commandDeps.Consensus, err = gserver.NewComponent(
+		// Overwrite the component.
+		component, err = gserver.NewComponent(
 			lifeCtx,
 			log,
 			homeDir,
 			gccodec.NewTxDecoder(clientCtx.TxConfig),
 			clientCtx.Codec,
 			gserver.Config{
-				RootStore:  simApp.Store(),
-				AppManager: simApp.AppManager,
+				RootStore:  gcApp.Store(),
+				AppManager: gcApp.AppManager,
 				ConfigMap:  configMap,
 			},
 		)
@@ -147,7 +130,7 @@ func NewGcosmosCommand(
 		// client construction
 		if err = depinject.Inject(
 			depinject.Configs(
-				simapp.AppConfig(),
+				gcapp.AppConfig(),
 				depinjectConfig,
 			),
 			&autoCliOpts, &moduleManager, &clientCtx,
@@ -156,19 +139,27 @@ func NewGcosmosCommand(
 		}
 	}
 
-	commandDeps.ModuleManager = moduleManager
-
 	// We have to overwrite the previously use rootCmd here,
 	// because the old value is now associated with potentially invalid values,
 	// and we have updated depinject values that correlate to the command being invoked.
 	rootCmd = &cobra.Command{
 		Use:               "gcosmos",
-		PersistentPreRunE: cmd.RootCommandPersistentPreRun(clientCtx),
+		PersistentPreRunE: gcapp.RootCommandPersistentPreRun(clientCtx),
 	}
 	rootCmd.SetContext(lifeCtx)
 	factory.EnhanceRootCommand(rootCmd)
-	if _, err = cmd.InitRootCmd[transaction.Tx](rootCmd, logger, commandDeps); err != nil {
-		panic(fmt.Errorf("failed to initialize root command: %w", err))
+
+	addExtraCommands(rootCmd, moduleManager)
+
+	if _, err = initRootCommandFull(
+		rootCmd,
+		cslog.NewCustomLogger(log),
+		fullRootCommandConfig{
+			App:                gcApp,
+			ConsensusComponent: component,
+		},
+	); err != nil {
+		panic(fmt.Errorf("failed to initialize full root command: %w", err))
 	}
 
 	nodeCmds := nodeservice.NewNodeCommands()

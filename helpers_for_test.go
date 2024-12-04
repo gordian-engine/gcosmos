@@ -208,9 +208,10 @@ func ConfigureChain(t *testing.T, ctx context.Context, cfg ChainConfig) Chain {
 		c.Run("config", "set", "app", "grpc.address", "localhost:0", "--skip-validate").NoError(t)
 
 		// The telemetry servers should be irrelevant for the gcosmos tests.
-		// If we leave them enabled, they will all contend for the same default port.
-		// We are unlikely to need them in the future, so just leave them disabled.
+		// Something appears to be not respecting enable=false and resulting in contention on the port,
+		// so we also just set them all to use port 0.
 		c.Run("config", "set", "app", "telemetry.enable", "false", "--skip-validate").NoError(t)
+		c.Run("config", "set", "app", "telemetry.address", "localhost:0", "--skip-validate").NoError(t)
 
 		// We may enable the v2 REST API later,
 		// but disable it for now to get tests passing.
